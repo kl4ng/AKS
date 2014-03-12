@@ -7,6 +7,8 @@ import java.math.*;
 
 public class AKS
 {
+	public static final BigDecimal EPSILON = new BigDecimal(1E-9);
+	
 	public static boolean isPrime(int num)
 	{
 		return isPrime(BigInteger.valueOf(num));
@@ -49,7 +51,7 @@ public class AKS
 	
 	private static BigInteger multOrder(BigInteger n)
 	{
-		BigInteger maxK = log(n, 2).multiply(log(n, 2)).toBigInteger();
+		BigInteger maxK = log(n, 2).multiply(log(n, 2)).add(EPSILON).toBigInteger();
 		
 		for(BigInteger r = new BigInteger("2"); ; r = r.add(BigInteger.ONE))
 		{
