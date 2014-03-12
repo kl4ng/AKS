@@ -48,15 +48,12 @@ public class AKS {
 		
 	}
 	
-	//basic euclidian gcd algorithm
+	//mod euclidian gcd algorithm
 	private static BigInteger gcd(BigInteger a, BigInteger b){
-		while(!a.equals(b)){
-			if(a.compareTo(b) == 1)
-				a = a.subtract(b);
-			else
-				b = b.subtract(a);
-		}
-		return a;
+		if(b.equals(BigInteger.valueOf(0)))
+			return a;
+			
+		return gcd(b, a.mod(b));
 	}
 	
 	public static void main(String[] args){
