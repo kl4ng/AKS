@@ -44,9 +44,22 @@ public class AKS
 		return true;
 	}
 	
-	private static boolean isPowerOfInteger(BigInteger num)
+	private static boolean isPowerOfInteger(BigInteger n)
 	{
+		BigInteger maxB = BigInteger.valueOf(n.bitLength());
+		for(BigInteger b = BigInteger.valueOf(2); b.compareTo(maxB) < 0; b.add(BigInteger.ONE))
+		{
+			BigInteger lo = BigInteger.valueOf(2);
+			BigInteger hi = n.add(BigInteger.ZERO);
+			
+			while(lo.compareTo(hi) < 0){
+				BigInteger a = hi.add(lo).divide(BigInteger.valueOf(2));
+				pow(a, b);
+			}
+			
+		}
 		
+		return false;
 	}
 	
 	private static BigInteger multOrder(BigInteger n)
@@ -87,6 +100,21 @@ public class AKS
 	private static BigDecimal log(BigInteger a, int b)
 	{
 		
+	}
+	
+	private static BigInteger pow(BigInteger a, BigInteger b)
+	{
+		if(b.compareTo(BigInteger.ONE) == 0)
+			return a;
+		
+		BigInteger tmp = b.shiftRight(1);
+		tmp = tmp.multiply(tmp);
+		
+		//check if b is odd
+		if(b.and(BigInteger.ONE).compareTo(BigInteger.ONE) == 0)
+			tmp = tmp.multiply(a);
+		
+		return tmp;
 	}
 	
 	public static void main(String[] args)
