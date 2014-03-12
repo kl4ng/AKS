@@ -5,14 +5,15 @@
 import java.math.BigInteger;
 
 
-public class AKS {
-	
-	public static boolean isPrime(int num){
+public class AKS
+{
+	public static boolean isPrime(int num)
+	{
 		return isPrime(BigInteger.valueOf(num));
 	}
 	
-	
-	public static boolean isPrime(BigInteger n){
+	public static boolean isPrime(BigInteger n)
+	{
 		// (1)see if n = a^b 
 		if(isPowerOfInteger(n))
 			return false;
@@ -24,7 +25,8 @@ public class AKS {
 		BigInteger a = BigInteger.valueOf(2);
 		BigInteger one = BigInteger.valueOf(1);
 		
-		for(; a.compareTo(r) <= 0; a.add(one)){
+		for(; a.compareTo(r) <= 0; a.add(one))
+		{
 			BigInteger gcd = gcd(a, r);
 			if(gcd.compareTo(one) > 0 && gcd.compareTo(n) < 0)
 				return false;
@@ -40,23 +42,27 @@ public class AKS {
 		return true;
 	}
 	
-	private static boolean isPowerOfInteger(BigInteger num){
+	private static boolean isPowerOfInteger(BigInteger num)
+	{
 		
 	}
 	
-	private static BigInteger multOrder(BigInteger num){
+	private static BigInteger multOrder(BigInteger num)
+	{
 		
 	}
 	
 	//mod euclidian gcd algorithm
-	private static BigInteger gcd(BigInteger a, BigInteger b){
+	private static BigInteger gcd(BigInteger a, BigInteger b)
+	{
 		if(b.equals(BigInteger.valueOf(0)))
 			return a;
 			
 		return gcd(b, a.mod(b));
 	}
 	
-	public static void main(String[] args){
+	public static void main(String[] args)
+	{
 		
 	}
 }
