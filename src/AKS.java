@@ -2,7 +2,7 @@
  * Evan Dorundo
  */
 
-import java.math.BigInteger;
+import java.math.*;
 
 
 public class AKS
@@ -47,9 +47,30 @@ public class AKS
 		
 	}
 	
-	private static BigInteger multOrder(BigInteger num)
+	private static BigInteger multOrder(BigInteger n)
 	{
+		BigInteger maxK = log(n, 2).multiply(log(n, 2)).toBigInteger();
 		
+		for(BigInteger r = new BigInteger("2"); ; r = r.add(BigInteger.ONE))
+		{
+			BigInteger a = BigInteger.ONE;
+			boolean valid = true;
+			for(BigInteger k = BigInteger.ONE; k.compareTo(maxK) <= 0; k = k.add(BigInteger.ONE))
+			{
+				a = a.multiply(n).mod(r);
+				
+				if(a.compareTo(BigInteger.ONE) <= 0)
+				{
+					valid = false;
+					break;
+				}
+			}
+			
+			if(valid)
+			{
+				return r;
+			}
+		}
 	}
 	
 	//mod euclidian gcd algorithm
@@ -61,8 +82,13 @@ public class AKS
 		return gcd(b, a.mod(b));
 	}
 	
-	public static void main(String[] args)
+	private static BigDecimal log(BigInteger a, int b)
 	{
 		
+	}
+	
+	public static void main(String[] args)
+	{
+		multOrder(new BigInteger("1"));
 	}
 }
