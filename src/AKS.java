@@ -3,7 +3,15 @@
  */
 
 import java.math.*;
+import java.util.*;
 
+/*
+ * (1) BigIntegers
+ * (2) longs for r
+ * (3) longs for a
+ * (4) cast n to long
+ * (5) longs for r, BigInteger for n
+ */
 
 public class AKS
 {
@@ -39,6 +47,7 @@ public class AKS
 			return true;
 		
 		//(5) 
+		checkCondition(n, r);
 		
 		//(6) we know its not composite by this point
 		return true;
@@ -96,6 +105,15 @@ public class AKS
 		}
 	}
 	
+	private static boolean checkCondition(BigInteger n, BigInteger r)
+	{
+		BigInteger maxA = sqrt(totient(r)).multiply(log(r, 2)).toBigInteger();
+		for(BigInteger a = BigInteger.ONE; a.compareTo(maxA) <= 0; a = a.add(BigInteger.ONE))
+		{
+			
+		}
+	}
+	
 	//mod euclidian gcd algorithm
 	private static BigInteger gcd(BigInteger a, BigInteger b)
 	{
@@ -106,6 +124,11 @@ public class AKS
 	}
 	
 	private static BigDecimal log(BigInteger a, int b)
+	{
+		
+	}
+	
+	private static BigDecimal sqrt(BigInteger a)
 	{
 		
 	}
@@ -123,6 +146,72 @@ public class AKS
 			tmp = tmp.multiply(a);
 		
 		return tmp;
+	}
+	
+	private static long totient(long r)
+	{
+		long result = r;
+		for(long a = 2; a * a <= r; a++)
+		{
+			if(r % a == 0)
+			{
+				result /= a;
+				result *= a - 1;
+				
+				while(r % a == 0)
+				{
+					r /= a;
+				}
+			}
+		}
+		
+		if(r > 1)
+		{
+			result /= r;
+			result *= r - 1;
+		}
+		
+		return result;
+	}
+	
+	private class Polynomial
+	{
+		ArrayList<BigInteger> coef;
+		BigInteger r;
+		BigInteger n;
+		
+		public Polynomial(BigInteger R, BigInteger N, BigInteger a)
+		{
+			coef = new ArrayList<BigInteger>();
+			r = R;
+			n = N;
+			
+			coef.add(BigInteger.ONE);
+			coef.add(a);
+		}
+		
+		private Polynomial pow(BigInteger e)
+		{
+			if(e.compareTo(BigInteger.ONE) == 0)
+			{
+				return this;
+			}
+			
+			Polynomial temp = pow(e.shiftRight(1));
+			temp = temp.multiply(temp);
+			
+			if(e.and(BigInteger.ONE).compareTo(BigInteger.ONE) == 0)
+			{
+				temp = temp.multiply(this);
+			}
+			
+			return temp;
+		}
+		
+		private Polynomial multiply(Polynomial p)
+		{
+			
+		}
 	}
 	
 	public static void main(String[] args)
