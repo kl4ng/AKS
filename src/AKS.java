@@ -29,21 +29,16 @@ public class AKS
 			return false;
 		
 		//(2) find smallest r s.t. Or(n) > (log n)^2
-		BigInteger r = multOrder(n);
+		long r = multOrder(n);
 		
 		//(3) see if 1 < gcd(a,n) < n for some a<=r
-		BigInteger a = BigInteger.valueOf(2);
-		BigInteger one = BigInteger.valueOf(1);
-		
-		for(; a.compareTo(r) <= 0; a.add(one))
+		if(!checkGCD(n, r))
 		{
-			BigInteger gcd = gcd(a, r);
-			if(gcd.compareTo(one) > 0 && gcd.compareTo(n) < 0)
-				return false;
+			return false;
 		}
 		
 		//(4) if n <= r, we know its prime
-		if(n.compareTo(r) <= 0)
+		if(n.compareTo(BigInteger.valueOf(r)) <= 0)
 			return true;
 		
 		//(5) 
@@ -79,17 +74,17 @@ public class AKS
 		return false;
 	}
 	
-	private static BigInteger multOrder(BigInteger n)
+	private static long multOrder(BigInteger n)
 	{
 		BigInteger maxK = log(n, 2).multiply(log(n, 2)).add(EPSILON).toBigInteger();
 		
-		for(BigInteger r = new BigInteger("2"); ; r = r.add(BigInteger.ONE))
+		for(long r = 2; ; r++)
 		{
 			BigInteger a = BigInteger.ONE;
 			boolean valid = true;
 			for(BigInteger k = BigInteger.ONE; k.compareTo(maxK) <= 0; k = k.add(BigInteger.ONE))
 			{
-				a = a.multiply(n).mod(r);
+				a = a.multiply(n).mod(BigInteger.valueOf(r));
 				
 				if(a.compareTo(BigInteger.ONE) <= 0)
 				{
@@ -105,7 +100,19 @@ public class AKS
 		}
 	}
 	
-	private static boolean checkCondition(BigInteger n, BigInteger r)
+	private static boolean checkGCD(BigInteger n, long r)
+	{
+		for(long a = 2; a <= r; a++)
+		{
+			BigInteger gcd = gcd(BigInteger.valueOf(a), n);
+			if(gcd.compareTo(BigInteger.ONE) > 0)
+				return false;
+		}
+		
+		return true;
+	}
+	
+	private static boolean checkCondition(BigInteger n, long r)
 	{
 		BigInteger maxA = sqrt(totient(r)).multiply(log(r, 2)).toBigInteger();
 		for(BigInteger a = BigInteger.ONE; a.compareTo(maxA) <= 0; a = a.add(BigInteger.ONE))
@@ -124,11 +131,6 @@ public class AKS
 	}
 	
 	private static BigDecimal log(BigInteger a, int b)
-	{
-		
-	}
-	
-	private static BigDecimal sqrt(BigInteger a)
 	{
 		
 	}
