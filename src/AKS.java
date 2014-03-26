@@ -114,7 +114,7 @@ public class AKS
 	
 	private static boolean checkCondition(BigInteger n, long r)
 	{
-		BigInteger maxA = sqrt(totient(r)).multiply(log(r, 2)).toBigInteger();
+		BigInteger maxA = Math.sqrt(totient(r)).multiply(log(r, 2)).toBigInteger();
 		for(BigInteger a = BigInteger.ONE; a.compareTo(maxA) <= 0; a = a.add(BigInteger.ONE))
 		{
 			
@@ -132,7 +132,7 @@ public class AKS
 	
 	private static BigDecimal log(BigInteger a, int b)
 	{
-		
+		//a.bitLength()
 	}
 	
 	private static BigInteger pow(BigInteger a, BigInteger b)
@@ -219,6 +219,6 @@ public class AKS
 	public static void main(String[] args)
 	{
 		//System.out.println(pow(new BigInteger("7"), new BigInteger("3")));
-		System.out.println(isPowerOfInteger(new BigInteger("6436343")));
+		System.out.println(BigInteger.valueOf(8).bitLength());
 	}
 }
