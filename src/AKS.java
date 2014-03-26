@@ -13,13 +13,20 @@ import java.util.*;
  * (5) longs for r, BigInteger for n
  */
 
+// TEST CASE: 27644437
+
 public class AKS
 {
-	public static final BigDecimal EPSILON = new BigDecimal(1E-9);
+//	public static final BigDecimal EPSILON = new BigDecimal(1E-9);
 	
-	public static boolean isPrime(int num)
+	public static boolean isPrime(int n)
 	{
-		return isPrime(BigInteger.valueOf(num));
+		return isPrime(BigInteger.valueOf(n));
+	}
+	
+	public static boolean isPrime(long n)
+	{
+		return isPrime(BigInteger.valueOf(n));
 	}
 	
 	public static boolean isPrime(BigInteger n)
@@ -33,16 +40,15 @@ public class AKS
 		
 		//(3) see if 1 < gcd(a,n) < n for some a<=r
 		if(!checkGCD(n, r))
-		{
 			return false;
-		}
 		
 		//(4) if n <= r, we know its prime
 		if(n.compareTo(BigInteger.valueOf(r)) <= 0)
 			return true;
 		
 		//(5) 
-		checkCondition(n, r);
+		if(!checkCondition(n, r))
+			return false;
 		
 		//(6) we know its not composite by this point
 		return true;
@@ -76,13 +82,15 @@ public class AKS
 	
 	private static long multOrder(BigInteger n)
 	{
-		BigInteger maxK = log(n, 2).multiply(log(n, 2)).add(EPSILON).toBigInteger();
+		long maxK = (long)Math.floor(log(n, 2) * log(n, 2));
+		
+//		BigInteger maxK = log(n, 2).multiply(log(n, 2)).add(EPSILON).toBigInteger();
 		
 		for(long r = 2; ; r++)
 		{
 			BigInteger a = BigInteger.ONE;
 			boolean valid = true;
-			for(BigInteger k = BigInteger.ONE; k.compareTo(maxK) <= 0; k = k.add(BigInteger.ONE))
+			for(long k = 1; k <= maxK; k++)
 			{
 				a = a.multiply(n).mod(BigInteger.valueOf(r));
 				
@@ -92,6 +100,17 @@ public class AKS
 					break;
 				}
 			}
+			
+//			for(BigInteger k = BigInteger.ONE; k.compareTo(maxK) <= 0; k = k.add(BigInteger.ONE))
+//			{
+//				a = a.multiply(n).mod(BigInteger.valueOf(r));
+//				
+//				if(a.compareTo(BigInteger.ONE) <= 0)
+//				{
+//					valid = false;
+//					break;
+//				}
+//			}
 			
 			if(valid)
 			{
@@ -114,11 +133,20 @@ public class AKS
 	
 	private static boolean checkCondition(BigInteger n, long r)
 	{
-		BigInteger maxA = Math.sqrt(totient(r)).multiply(log(r, 2)).toBigInteger();
-		for(BigInteger a = BigInteger.ONE; a.compareTo(maxA) <= 0; a = a.add(BigInteger.ONE))
+		long maxA = (long)Math.floor(Math.sqrt(totient(r)) * log(n, 2));
+		for(long a = 1; a <= maxA; a++)
 		{
+			Polynomial rhs = new Polynomial(r, n);
+			rhs.coef[(int)(n.mod(BigInteger.valueOf(r)).longValue())] = BigInteger.ONE;
+			rhs.coef[0] = BigInteger.valueOf(a);
 			
+			if(!new Polynomial(r, n, a).pow(n).equals(rhs))
+			{
+				return false;
+			}
 		}
+		
+		return true;
 	}
 	
 	//mod euclidian gcd algorithm
@@ -179,23 +207,58 @@ public class AKS
 		return result;
 	}
 	
-	private class Polynomial
+	private static class Polynomial
 	{
-		ArrayList<BigInteger> coef;
-		BigInteger r;
+		BigInteger[] coef;
+		long r;
 		BigInteger n;
 		
-		public Polynomial(BigInteger R, BigInteger N, BigInteger a)
+		public Polynomial(long R, BigInteger N)
 		{
-			coef = new ArrayList<BigInteger>();
+			coef = new BigInteger[(int)R];
+			for(int i = 0; i < coef.length; i++)
+			{
+				coef[i] = BigInteger.ZERO;
+			}
+			
+			r = R;
+			n = N;
+		}
+		
+		public Polynomial(long R, BigInteger N, long a)
+		{
+			coef = new BigInteger[(int)R];
+			for(int i = 0; i < coef.length; i++)
+			{
+				coef[i] = BigInteger.ZERO;
+			}
+			
 			r = R;
 			n = N;
 			
-			coef.add(BigInteger.ONE);
-			coef.add(a);
+			coef[1] = BigInteger.ONE;
+			coef[0] = BigInteger.valueOf(a);
 		}
 		
-		private Polynomial pow(BigInteger e)
+		public boolean equals(Polynomial p)
+		{
+			if(coef.length != p.coef.length)
+			{
+				return false;
+			}
+			
+			for(int i = 0; i < coef.length; i++)
+			{
+				if(coef[i] != p.coef[i])
+				{
+					return false;
+				}
+			}
+			
+			return true;
+		}
+		
+		public Polynomial pow(BigInteger e)
 		{
 			if(e.compareTo(BigInteger.ONE) == 0)
 			{
@@ -213,15 +276,31 @@ public class AKS
 			return temp;
 		}
 		
+		// We do the mod during the multiplication
 		private Polynomial multiply(Polynomial p)
 		{
+			Polynomial ret = new Polynomial(r, n);
+			for(int i = 0; i < coef.length; i++)
+			{
+				for(int j = 0; j < p.coef.length; j++)
+				{
+					BigInteger c = coef[i].multiply(p.coef[j]).mod(n);
+					
+					ret.coef[(i + j) % (int)r] = ret.coef[(i + j) % (int)r].add(c);
+				}
+			}
 			
+			return ret;
 		}
 	}
 	
 	public static void main(String[] args)
 	{
 		//System.out.println(pow(new BigInteger("7"), new BigInteger("3")));
-		System.out.println(log(new BigInteger("6"), 2));
+//		System.out.println(log(new BigInteger("6"), 2));
+		
+//		System.out.println(Arrays.toString(new Polynomial(19, new BigInteger("8456029348750293487095238472098475"), 3).pow(BigInteger.valueOf(20)).coef));
+		
+		System.out.println(isPrime(new BigInteger("27644437")));
 	}
 }
