@@ -130,9 +130,12 @@ public class AKS
 		return gcd(b, a.mod(b));
 	}
 	
-	private static BigDecimal log(BigInteger a, int b)
+	private static double log(BigInteger a, int b)
 	{
-		//a.bitLength()
+		String s = a.toString();
+		int l = Math.min(18, s.length());
+		double d = Double.parseDouble(s.substring(0,l)) / Math.pow(10, l-1);
+		return (Math.log10(d) + (s.length()-1)) / Math.log10(b);
 	}
 	
 	private static BigInteger pow(BigInteger a, BigInteger b)
@@ -219,6 +222,6 @@ public class AKS
 	public static void main(String[] args)
 	{
 		//System.out.println(pow(new BigInteger("7"), new BigInteger("3")));
-		System.out.println(BigInteger.valueOf(8).bitLength());
+		System.out.println(log(new BigInteger("6"), 2));
 	}
 }
