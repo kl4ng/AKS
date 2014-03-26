@@ -105,7 +105,7 @@ public class AKS
 		for(long a = 2; a <= r; a++)
 		{
 			BigInteger gcd = gcd(BigInteger.valueOf(a), n);
-			if(gcd.compareTo(BigInteger.ONE) > 0)
+			if(gcd.compareTo(BigInteger.ONE) > 0 && gcd.compareTo(n) < 0)
 				return false;
 		}
 		
