@@ -13,7 +13,8 @@ import java.util.*;
  * (5) longs for r, BigInteger for n
  */
 
-// TEST CASE: 27644437
+// TEST CASES: 31
+//			   27644437
 
 public class AKS
 {
@@ -31,24 +32,37 @@ public class AKS
 	
 	public static boolean isPrime(BigInteger n)
 	{
+//		System.out.println("1");
+		
 		// (1)see if n = a^b 
 		if(isPowerOfInteger(n))
 			return false;
 		
+//		System.out.println("2");
+		
 		//(2) find smallest r s.t. Or(n) > (log n)^2
 		long r = multOrder(n);
+		System.out.println(r);
+		
+//		System.out.println("3");
 		
 		//(3) see if 1 < gcd(a,n) < n for some a<=r
 		if(!checkGCD(n, r))
 			return false;
 		
+//		System.out.println("4");
+		
 		//(4) if n <= r, we know its prime
 		if(n.compareTo(BigInteger.valueOf(r)) <= 0)
 			return true;
 		
+//		System.out.println("5");
+		
 		//(5) 
 		if(!checkCondition(n, r))
 			return false;
+		
+//		System.out.println("6");
 		
 		//(6) we know its not composite by this point
 		return true;
@@ -138,10 +152,12 @@ public class AKS
 		{
 			Polynomial rhs = new Polynomial(r, n);
 			rhs.coef[(int)(n.mod(BigInteger.valueOf(r)).longValue())] = BigInteger.ONE;
-			rhs.coef[0] = BigInteger.valueOf(a);
+			rhs.coef[0] = rhs.coef[0].add(BigInteger.valueOf(a));
 			
-			if(!new Polynomial(r, n, a).pow(n).equals(rhs))
+			if(!(new Polynomial(r, n, a).pow(n).equals(rhs)))
 			{
+//				System.out.println(a);
+				
 				return false;
 			}
 		}
@@ -296,11 +312,11 @@ public class AKS
 	
 	public static void main(String[] args)
 	{
-		//System.out.println(pow(new BigInteger("7"), new BigInteger("3")));
-//		System.out.println(log(new BigInteger("6"), 2));
+		Scanner in = new Scanner(System.in);
 		
-//		System.out.println(Arrays.toString(new Polynomial(19, new BigInteger("8456029348750293487095238472098475"), 3).pow(BigInteger.valueOf(20)).coef));
-		
-		System.out.println(isPrime(new BigInteger("27644437")));
+		while(true)
+		{
+			System.out.println(isPrime(new BigInteger(in.next())));
+		}
 	}
 }
