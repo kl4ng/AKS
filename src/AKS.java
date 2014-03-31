@@ -13,8 +13,7 @@ import java.util.*;
  * (5) longs for r, BigInteger for n
  */
 
-// TEST CASES: 31
-//			   27644437
+// TEST CASES: 27644437
 
 public class AKS
 {
@@ -32,37 +31,24 @@ public class AKS
 	
 	public static boolean isPrime(BigInteger n)
 	{
-//		System.out.println("1");
-		
 		// (1)see if n = a^b 
 		if(isPowerOfInteger(n))
 			return false;
 		
-//		System.out.println("2");
-		
 		//(2) find smallest r s.t. Or(n) > (log n)^2
 		long r = multOrder(n);
-		System.out.println(r);
-		
-//		System.out.println("3");
 		
 		//(3) see if 1 < gcd(a,n) < n for some a<=r
 		if(!checkGCD(n, r))
 			return false;
 		
-//		System.out.println("4");
-		
 		//(4) if n <= r, we know its prime
 		if(n.compareTo(BigInteger.valueOf(r)) <= 0)
 			return true;
 		
-//		System.out.println("5");
-		
 		//(5) 
 		if(!checkCondition(n, r))
 			return false;
-		
-//		System.out.println("6");
 		
 		//(6) we know its not composite by this point
 		return true;
@@ -156,8 +142,6 @@ public class AKS
 			
 			if(!(new Polynomial(r, n, a).pow(n).equals(rhs)))
 			{
-//				System.out.println(a);
-				
 				return false;
 			}
 		}
@@ -265,7 +249,7 @@ public class AKS
 			
 			for(int i = 0; i < coef.length; i++)
 			{
-				if(coef[i] != p.coef[i])
+				if(!coef[i].equals(p.coef[i]))
 				{
 					return false;
 				}
@@ -302,7 +286,7 @@ public class AKS
 				{
 					BigInteger c = coef[i].multiply(p.coef[j]).mod(n);
 					
-					ret.coef[(i + j) % (int)r] = ret.coef[(i + j) % (int)r].add(c);
+					ret.coef[(i + j) % (int)r] = ret.coef[(i + j) % (int)r].add(c).mod(n);
 				}
 			}
 			
