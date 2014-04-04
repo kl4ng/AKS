@@ -207,6 +207,57 @@ public class AKS
 		return result;
 	}
 	
+	// TODO: Change a to BigComplex
+	public static BigComplex[] fft(BigInteger[] a, int m, BigComplex w)
+	{
+		if(m == 1)
+		{
+			BigComplex[] pairs = new BigComplex[1];
+			pairs[0] = w;
+			pairs[1] = new BigComplex(new BigDecimal(a[0]), BigDecimal.ZERO);
+			
+			return pairs;
+		}
+		else
+		{
+			BigInteger[] aEven = new BigInteger[(m + 1) >> 1];
+			BigInteger[] aOdd = new BigInteger[m >> 1];
+			
+			for(int i = 0; i < a.length; i++)
+			{
+				if((i & 1) == 0)
+				{
+					aEven[i >> 1] = a[i];
+				}
+				else
+				{
+					aOdd[i >> 1] = a[i];
+				}
+			}
+			
+			BigComplex[] fEven = fft(aEven, (m + 1) >> 1, w.multiply(w));
+			BigComplex[] fOdd = fft(aOdd, m >> 1, w.multiply(w));
+			
+			BigComplex[] pairs = new BigComplex[m];
+			
+			BigComplex x = new BigComplex(BigDecimal.ONE, BigDecimal.ZERO);
+			for(int j = 0; j < (m + 1) >> 1; j++)
+			{
+				pairs[j] = fEven[j].add(x.multiply(fOdd[j]));
+				
+				if(j + ((m + 1) >> 1) < m)
+				{
+					pairs[j + ((m + 1) >> 1)] = fEven[j].subtract(x.multiply(fOdd[j]));
+				}
+				
+				
+				x = x.multiply(w);
+			}
+			
+			return pairs;
+		}
+	}
+	
 	private static class Polynomial
 	{
 		BigInteger[] coef;
@@ -276,21 +327,78 @@ public class AKS
 			return temp;
 		}
 		
-		// We do the mod during the multiplication
+		// Assumes both polynomials are the same degree
 		private Polynomial multiply(Polynomial p)
 		{
-			Polynomial ret = new Polynomial(r, n);
-			for(int i = 0; i < coef.length; i++)
+			int m = (int)Math.ceil((Math.log(2 * r - 1) / Math.log(2)) - 1E-9);
+			
+			BigComplex root = new BigComplex(Math.cos(2 * Math.PI / m), Math.sin(2 * Math.PI / m));
+			
+			// TODO: expand polynomial to power of 2
+			BigComplex[] f1 = fft(coef, m, root);
+			BigComplex[] f2 = fft(p.coef, m, root);
+			
+			BigComplex[] f3 = new BigComplex[(int)m];
+			for(int i = 0; i < m; i++)
 			{
-				for(int j = 0; j < p.coef.length; j++)
-				{
-					BigInteger c = coef[i].multiply(p.coef[j]).mod(n);
-					
-					ret.coef[(i + j) % (int)r] = ret.coef[(i + j) % (int)r].add(c).mod(n);
-				}
+				f3[i] = f1[i].multiply(f2[i]);
 			}
 			
-			return ret;
+			BigInteger[] ret = new BigInteger[m];
+			
+			BigComplex[] c = fft(f3, m, new BigComplex(BigDecimal.ONE, BigDecimal.ZERO).divide(root));
+		}
+		
+		// We do the mod during the multiplication
+//		private Polynomial multiply(Polynomial p)
+//		{
+//			Polynomial ret = new Polynomial(r, n);
+//			for(int i = 0; i < coef.length; i++)
+//			{
+//				for(int j = 0; j < p.coef.length; j++)
+//				{
+//					BigInteger c = coef[i].multiply(p.coef[j]).mod(n);
+//					
+//					ret.coef[(i + j) % (int)r] = ret.coef[(i + j) % (int)r].add(c).mod(n);
+//				}
+//			}
+//			
+//			return ret;
+//		}
+	}
+	
+	// TODO: add divide
+	private static class BigComplex
+	{
+		BigDecimal real;
+		BigDecimal imag;
+		
+		public BigComplex(double r, double i)
+		{
+			real = new BigDecimal(r);
+			imag = new BigDecimal(i);
+		}
+		
+		public BigComplex(BigDecimal r, BigDecimal i)
+		{
+			real = r;
+			imag = i;
+		}
+		
+		public BigComplex add(BigComplex c)
+		{
+			return new BigComplex(real.add(c.real), imag.add(c.imag));
+		}
+		
+		public BigComplex subtract(BigComplex c)
+		{
+			return new BigComplex(real.subtract(c.real), imag.subtract(c.imag));
+		}
+		
+		public BigComplex multiply(BigComplex c)
+		{
+			return new BigComplex(real.multiply(c.real).subtract(imag.multiply(c.imag)),
+					              real.multiply(c.imag).add(imag.multiply(c.real)));
 		}
 	}
 	
