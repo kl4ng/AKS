@@ -207,21 +207,30 @@ public class AKS
 		return result;
 	}
 	
-	// TODO: Change a to BigComplex
 	public static BigComplex[] fft(BigInteger[] a, int m, BigComplex w)
+	{
+		BigComplex[] newCoef = new BigComplex[a.length];
+		for(int i = 0; i < a.length; i++)
+		{
+			newCoef[i] = new BigComplex(new BigDecimal(a[i]), BigDecimal.ZERO);
+		}
+		
+		return fft(newCoef, m, w);
+	}
+	
+	public static BigComplex[] fft(BigComplex[] a, int m, BigComplex w)
 	{
 		if(m == 1)
 		{
-			BigComplex[] pairs = new BigComplex[1];
-			pairs[0] = w;
-			pairs[1] = new BigComplex(new BigDecimal(a[0]), BigDecimal.ZERO);
+			BigComplex[] f = new BigComplex[1];
+			f[1] = a[0];
 			
-			return pairs;
+			return f;
 		}
 		else
 		{
-			BigInteger[] aEven = new BigInteger[(m + 1) >> 1];
-			BigInteger[] aOdd = new BigInteger[m >> 1];
+			BigComplex[] aEven = new BigComplex[(m + 1) >> 1];
+			BigComplex[] aOdd = new BigComplex[m >> 1];
 			
 			for(int i = 0; i < a.length; i++)
 			{
@@ -238,23 +247,22 @@ public class AKS
 			BigComplex[] fEven = fft(aEven, (m + 1) >> 1, w.multiply(w));
 			BigComplex[] fOdd = fft(aOdd, m >> 1, w.multiply(w));
 			
-			BigComplex[] pairs = new BigComplex[m];
+			BigComplex[] f = new BigComplex[m];
 			
 			BigComplex x = new BigComplex(BigDecimal.ONE, BigDecimal.ZERO);
 			for(int j = 0; j < (m + 1) >> 1; j++)
 			{
-				pairs[j] = fEven[j].add(x.multiply(fOdd[j]));
+				f[j] = fEven[j].add(x.multiply(fOdd[j]));
 				
 				if(j + ((m + 1) >> 1) < m)
 				{
-					pairs[j + ((m + 1) >> 1)] = fEven[j].subtract(x.multiply(fOdd[j]));
+					f[j + ((m + 1) >> 1)] = fEven[j].subtract(x.multiply(fOdd[j]));
 				}
-				
 				
 				x = x.multiply(w);
 			}
 			
-			return pairs;
+			return f;
 		}
 	}
 	
@@ -335,8 +343,8 @@ public class AKS
 			BigComplex root = new BigComplex(Math.cos(2 * Math.PI / m), Math.sin(2 * Math.PI / m));
 			
 			// TODO: expand polynomial to power of 2
-			BigComplex[] f1 = fft(coef, m, root);
-			BigComplex[] f2 = fft(p.coef, m, root);
+			BigComplex[] f1 = fft(coef, (int)r, root);
+			BigComplex[] f2 = fft(p.coef, (int)r, root);
 			
 			BigComplex[] f3 = new BigComplex[(int)m];
 			for(int i = 0; i < m; i++)
@@ -344,9 +352,15 @@ public class AKS
 				f3[i] = f1[i].multiply(f2[i]);
 			}
 			
-			BigInteger[] ret = new BigInteger[m];
-			
 			BigComplex[] c = fft(f3, m, new BigComplex(BigDecimal.ONE, BigDecimal.ZERO).divide(root));
+			
+			Polynomial result = new Polynomial(c.length, n);
+			for(int j = 0; j < c.length; j++)
+			{
+				result.coef[j] = c[j].real.toBigInteger();
+			}
+			
+			return result;
 		}
 		
 		// We do the mod during the multiplication
@@ -367,7 +381,6 @@ public class AKS
 //		}
 	}
 	
-	// TODO: add divide
 	private static class BigComplex
 	{
 		BigDecimal real;
@@ -399,6 +412,13 @@ public class AKS
 		{
 			return new BigComplex(real.multiply(c.real).subtract(imag.multiply(c.imag)),
 					              real.multiply(c.imag).add(imag.multiply(c.real)));
+		}
+		
+		public BigComplex divide(BigComplex c)
+		{
+			BigDecimal denom = c.real.multiply(c.real).add(c.imag.multiply(c.imag));
+			return new BigComplex(real.multiply(c.real).add(imag.multiply(c.imag)).divide(denom),
+								  imag.multiply(c.real).subtract(real.multiply(c.imag)).divide(denom));
 		}
 	}
 	
