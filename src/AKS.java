@@ -223,13 +223,13 @@ public class AKS
 		if(m == 1)
 		{
 			BigComplex[] f = new BigComplex[1];
-			f[1] = a[0];
+			f[0] = a[0];
 			
 			return f;
 		}
 		else
 		{
-			BigComplex[] aEven = new BigComplex[(m + 1) >> 1];
+			BigComplex[] aEven = new BigComplex[m >> 1];
 			BigComplex[] aOdd = new BigComplex[m >> 1];
 			
 			for(int i = 0; i < a.length; i++)
@@ -244,19 +244,19 @@ public class AKS
 				}
 			}
 			
-			BigComplex[] fEven = fft(aEven, (m + 1) >> 1, w.multiply(w));
+			BigComplex[] fEven = fft(aEven, m >> 1, w.multiply(w));
 			BigComplex[] fOdd = fft(aOdd, m >> 1, w.multiply(w));
 			
 			BigComplex[] f = new BigComplex[m];
 			
 			BigComplex x = new BigComplex(BigDecimal.ONE, BigDecimal.ZERO);
-			for(int j = 0; j < (m + 1) >> 1; j++)
+			for(int j = 0; j < m >> 1; j++)
 			{
 				f[j] = fEven[j].add(x.multiply(fOdd[j]));
 				
-				if(j + ((m + 1) >> 1) < m)
+				if(j + (m >> 1) < m)
 				{
-					f[j + ((m + 1) >> 1)] = fEven[j].subtract(x.multiply(fOdd[j]));
+					f[j + (m >> 1)] = fEven[j].subtract(x.multiply(fOdd[j]));
 				}
 				
 				x = x.multiply(w);
@@ -335,14 +335,38 @@ public class AKS
 			return temp;
 		}
 		
+		private void expand()
+		{
+			int tmp = (int)r;
+			int pow2 = 0;
+			while(tmp != 0)
+			{
+				tmp >>= 1;
+				pow2++;
+			}
+			
+			BigInteger[] newCoef = new BigInteger[1<<pow2];
+			for(int i = 0; i < newCoef.length; i++)
+			{
+				if(i < r)
+					newCoef[i] = coef[i];
+				else
+					newCoef[i] = BigInteger.ZERO;
+			}
+			
+			coef = newCoef;
+			r = newCoef.length;
+		}
+		
 		// Assumes both polynomials are the same degree
 		private Polynomial multiply(Polynomial p)
 		{
-			int m = (int)Math.ceil((Math.log(2 * r - 1) / Math.log(2)) - 1E-9);
+			this.expand();
+			p.expand();
+			int m = (int) Math.max(r, p.r);
 			
 			BigComplex root = new BigComplex(Math.cos(2 * Math.PI / m), Math.sin(2 * Math.PI / m));
 			
-			// TODO: expand polynomial to power of 2
 			BigComplex[] f1 = fft(coef, (int)r, root);
 			BigComplex[] f2 = fft(p.coef, (int)r, root);
 			
@@ -417,8 +441,8 @@ public class AKS
 		public BigComplex divide(BigComplex c)
 		{
 			BigDecimal denom = c.real.multiply(c.real).add(c.imag.multiply(c.imag));
-			return new BigComplex(real.multiply(c.real).add(imag.multiply(c.imag)).divide(denom),
-								  imag.multiply(c.real).subtract(real.multiply(c.imag)).divide(denom));
+			return new BigComplex(real.multiply(c.real).add(imag.multiply(c.imag)).divide(denom, RoundingMode.HALF_EVEN),
+								  imag.multiply(c.real).subtract(real.multiply(c.imag)).divide(denom, RoundingMode.HALF_EVEN));
 		}
 	}
 	
