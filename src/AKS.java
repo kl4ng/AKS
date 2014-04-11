@@ -31,6 +31,8 @@ public class AKS
 	
 	public static boolean isPrime(BigInteger n)
 	{
+		System.out.println(Double.MIN_NORMAL);
+		
 		// (1)see if n = a^b 
 		if(isPowerOfInteger(n))
 			return false;
@@ -45,6 +47,8 @@ public class AKS
 		//(4) if n <= r, we know its prime
 		if(n.compareTo(BigInteger.valueOf(r)) <= 0)
 			return true;
+		
+		System.out.println(r);
 		
 		//(5) 
 		if(!checkCondition(n, r))
@@ -136,6 +140,8 @@ public class AKS
 		long maxA = (long)Math.floor(Math.sqrt(totient(r)) * log(n, 2));
 		for(long a = 1; a <= maxA; a++)
 		{
+			System.out.println(a);
+			
 			Polynomial rhs = new Polynomial(r, n);
 			rhs.coef[(int)(n.mod(BigInteger.valueOf(r)).longValue())] = BigInteger.ONE;
 			rhs.coef[0] = rhs.coef[0].add(BigInteger.valueOf(a));
@@ -263,6 +269,62 @@ public class AKS
 		}
 	}
 	
+	public static Complex[] fft(BigInteger[] a, int m, Complex w)
+	{
+		Complex[] newCoef = new Complex[a.length];
+		for(int i = 0; i < a.length; i++)
+		{
+			newCoef[i] = new Complex(a[i].doubleValue(), 0);
+		}
+		
+		return fft(newCoef, m, w);
+	}
+	
+	public static Complex[] fft(Complex[] a, int m, Complex w)
+	{
+		if(m == 1)
+		{
+			Complex[] f = new Complex[1];
+			f[0] = a[0];
+			
+			return f;
+		}
+		else
+		{
+			Complex[] aEven = new Complex[m >> 1];
+			Complex[] aOdd = new Complex[m >> 1];
+			
+			for(int i = 0; i < a.length; i++)
+			{
+				if((i & 1) == 0)
+				{
+					aEven[i >> 1] = a[i];
+				}
+				else
+				{
+					aOdd[i >> 1] = a[i];
+				}
+			}
+			
+			Complex[] fEven = fft(aEven, m >> 1, w.multiply(w));
+			Complex[] fOdd = fft(aOdd, m >> 1, w.multiply(w));
+			
+			Complex[] f = new Complex[m];
+			
+			Complex x = new Complex(1, 0);
+			for(int j = 0; j < m >> 1; j++)
+			{
+				f[j] = fEven[j].add(x.multiply(fOdd[j]));
+				
+				f[j + (m >> 1)] = fEven[j].subtract(x.multiply(fOdd[j]));
+				
+				x = x.multiply(w);
+			}
+			
+			return f;
+		}
+	}
+	
 	private static class Polynomial
 	{
 		BigInteger[] coef;
@@ -366,26 +428,51 @@ public class AKS
 			p = p.expand();
 			int m = (int) Math.max(q.r, p.r);
 			
-			BigComplex root = new BigComplex(Math.cos(2 * Math.PI / m), Math.sin(2 * Math.PI / m));
+			System.out.println(Math.sin(2.0 * Math.PI / (double)m));
 			
-			BigComplex[] f1 = fft(q.coef, m, root);
-			BigComplex[] f2 = fft(p.coef, m, root);
+			Complex root = new Complex(Math.cos(2.0 * Math.PI / (double)m), Math.sin(2.0 * Math.PI / (double)m));
 			
-			BigComplex[] f3 = new BigComplex[m];
+			Complex[] f1 = fft(q.coef, m, root);
+			Complex[] f2 = fft(p.coef, m, root);
+			
+			Complex[] f3 = new Complex[m];
 			for(int i = 0; i < m; i++)
 			{
 				f3[i] = f1[i].multiply(f2[i]);
 			}
 			
-			BigComplex[] c = fft(f3, m, new BigComplex(BigDecimal.ONE, BigDecimal.ZERO).divide(root));
+			Complex[] c = fft(f3, m, new Complex(1, 0).divide(root));
 			
 			Polynomial result = new Polynomial(c.length, n);
 			for(int j = 0; j < c.length; j++)
 			{
-				result.coef[j] = c[j].real.add(EPSILON).toBigInteger();
+				result.coef[j] = BigInteger.valueOf(Math.round(c[j].real + 1E-9));
+//				System.out.println(c[j].imag);
 			}
 			
 			return result.mod((int)r);
+			
+//			BigComplex root = new BigComplex(Math.cos(2 * Math.PI / m), Math.sin(2 * Math.PI / m));
+//			
+//			BigComplex[] f1 = fft(q.coef, m, root);
+//			BigComplex[] f2 = fft(p.coef, m, root);
+//			
+//			BigComplex[] f3 = new BigComplex[m];
+//			for(int i = 0; i < m; i++)
+//			{
+//				f3[i] = f1[i].multiply(f2[i]);
+//			}
+//			
+//			BigComplex[] c = fft(f3, m, new BigComplex(BigDecimal.ONE, BigDecimal.ZERO).divide(root));
+//			
+//			Polynomial result = new Polynomial(c.length, n);
+//			for(int j = 0; j < c.length; j++)
+//			{
+//				result.coef[j] = c[j].real.add(EPSILON).toBigInteger();
+//				System.out.println(c[j].imag);
+//			}
+//			
+//			return result.mod((int)r);
 		}
 		
 		public Polynomial mod(int m)
@@ -415,6 +502,46 @@ public class AKS
 //			
 //			return ret;
 //		}
+	}
+	
+	private static class Complex
+	{
+		double real;
+		double imag;
+		
+		public Complex(double r, double i)
+		{
+			real = r;
+			imag = i;
+			
+//			System.out.println("Here");
+			
+//			if(real <= 1E-307 || imag <= 1E-307)
+//			{
+//				System.out.println("Underflow!");
+//			}
+		}
+		
+		public Complex add(Complex c)
+		{
+			return new Complex(real + c.real, imag + c.imag);
+		}
+		
+		public Complex subtract(Complex c)
+		{
+			return new Complex(real - c.real, imag - c.imag);
+		}
+		
+		public Complex multiply(Complex c)
+		{
+			return new Complex(real * c.real - imag * c.imag, real * c.imag + imag * c.real);
+		}
+		
+		public Complex divide(Complex c)
+		{
+			double denom = c.real * c.real + c.imag * c.imag;
+			return new Complex((real * c.real + imag * c.imag) / denom, (imag * c.real - real * c.imag) / denom);
+		}
 	}
 	
 	private static class BigComplex
