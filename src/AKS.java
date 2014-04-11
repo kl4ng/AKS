@@ -17,7 +17,7 @@ import java.util.*;
 
 public class AKS
 {
-//	public static final BigDecimal EPSILON = new BigDecimal(1E-9);
+	public static final BigDecimal EPSILON = new BigDecimal(1E-9);
 	
 	public static boolean isPrime(int n)
 	{
@@ -254,10 +254,7 @@ public class AKS
 			{
 				f[j] = fEven[j].add(x.multiply(fOdd[j]));
 				
-				if(j + (m >> 1) < m)
-				{
-					f[j + (m >> 1)] = fEven[j].subtract(x.multiply(fOdd[j]));
-				}
+				f[j + (m >> 1)] = fEven[j].subtract(x.multiply(fOdd[j]));
 				
 				x = x.multiply(w);
 			}
@@ -335,9 +332,9 @@ public class AKS
 			return temp;
 		}
 		
-		private void expand()
+		private Polynomial expand()
 		{
-			int tmp = (int)r;
+			int tmp = (int)((r << 1) - 1);
 			int pow2 = 0;
 			while(tmp != 0)
 			{
@@ -345,32 +342,36 @@ public class AKS
 				pow2++;
 			}
 			
-			BigInteger[] newCoef = new BigInteger[1<<pow2];
-			for(int i = 0; i < newCoef.length; i++)
+			if(Long.bitCount((r << 1) - 1) == 1)
 			{
-				if(i < r)
-					newCoef[i] = coef[i];
-				else
-					newCoef[i] = BigInteger.ZERO;
+				pow2--;
 			}
 			
-			coef = newCoef;
-			r = newCoef.length;
+			Polynomial newPoly = new Polynomial(1 << pow2, n);
+			for(int i = 0; i < newPoly.coef.length; i++)
+			{
+				if(i < r)
+					newPoly.coef[i] = coef[i];
+				else
+					newPoly.coef[i] = BigInteger.ZERO;
+			}
+			
+			return newPoly;
 		}
 		
 		// Assumes both polynomials are the same degree
 		private Polynomial multiply(Polynomial p)
 		{
-			this.expand();
-			p.expand();
-			int m = (int) Math.max(r, p.r);
+			Polynomial q = expand();
+			p = p.expand();
+			int m = (int) Math.max(q.r, p.r);
 			
 			BigComplex root = new BigComplex(Math.cos(2 * Math.PI / m), Math.sin(2 * Math.PI / m));
 			
-			BigComplex[] f1 = fft(coef, (int)r, root);
-			BigComplex[] f2 = fft(p.coef, (int)r, root);
+			BigComplex[] f1 = fft(q.coef, m, root);
+			BigComplex[] f2 = fft(p.coef, m, root);
 			
-			BigComplex[] f3 = new BigComplex[(int)m];
+			BigComplex[] f3 = new BigComplex[m];
 			for(int i = 0; i < m; i++)
 			{
 				f3[i] = f1[i].multiply(f2[i]);
@@ -381,10 +382,21 @@ public class AKS
 			Polynomial result = new Polynomial(c.length, n);
 			for(int j = 0; j < c.length; j++)
 			{
-				result.coef[j] = c[j].real.toBigInteger();
+				result.coef[j] = c[j].real.add(EPSILON).toBigInteger();
 			}
 			
-			return result;
+			return result.mod((int)r);
+		}
+		
+		public Polynomial mod(int m)
+		{
+			Polynomial p = new Polynomial(m, n);
+			for(int i = 0; i < coef.length; i++)
+			{
+				p.coef[i % m] = p.coef[i % m].add(coef[i]).mod(n);
+			}
+			
+			return p;
 		}
 		
 		// We do the mod during the multiplication
