@@ -2,22 +2,20 @@
  * Evan Dorundo
  */
 
-import java.math.*;
 import java.util.*;
-
-/*
- * (1) BigIntegers
- * (2) longs for r
- * (3) longs for a
- * (4) cast n to long
- * (5) longs for r, BigInteger for n
- */
-
-// TEST CASES: 27644437
-//             253787
+import java.io.*;
+import java.math.*;
 
 public class AKS
 {
+	/*
+	 * Values for MODE:
+	 * 0: Slow multiplication
+	 * 1: Fast fourier transform with BigDecimals
+	 * 2: Fast fourier transform with doubles
+	 */
+	public static final int MODE = 2;
+	
 	public static final MathContext PRECISION = MathContext.DECIMAL64;
 	public static final BigDecimal EPSILON = new BigDecimal(1E-3, PRECISION);
 	
@@ -47,8 +45,6 @@ public class AKS
 		//(4) if n <= r, we know its prime
 		if(n.compareTo(BigInteger.valueOf(r)) <= 0)
 			return true;
-		
-//		System.out.println(r);
 		
 		//(5) 
 		if(!checkCondition(n, r))
@@ -88,8 +84,6 @@ public class AKS
 	{
 		long maxK = (long)Math.floor(log(n, 2) * log(n, 2));
 		
-//		BigInteger maxK = log(n, 2).multiply(log(n, 2)).add(EPSILON).toBigInteger();
-		
 		for(long r = 2; ; r++)
 		{
 			BigInteger a = BigInteger.ONE;
@@ -104,17 +98,6 @@ public class AKS
 					break;
 				}
 			}
-			
-//			for(BigInteger k = BigInteger.ONE; k.compareTo(maxK) <= 0; k = k.add(BigInteger.ONE))
-//			{
-//				a = a.multiply(n).mod(BigInteger.valueOf(r));
-//				
-//				if(a.compareTo(BigInteger.ONE) <= 0)
-//				{
-//					valid = false;
-//					break;
-//				}
-//			}
 			
 			if(valid)
 			{
@@ -140,19 +123,12 @@ public class AKS
 		long maxA = (long)Math.floor(Math.sqrt(totient(r)) * log(n, 2));
 		for(long a = 1; a <= maxA; a++)
 		{
-//			System.out.println(a);
-			
 			Polynomial rhs = new Polynomial(r, n);
 			rhs.coef[(int)(n.mod(BigInteger.valueOf(r)).longValue())] = BigInteger.ONE;
 			rhs.coef[0] = rhs.coef[0].add(BigInteger.valueOf(a));
 			
 			if(!(new Polynomial(r, n, a).pow(n).equals(rhs)))
 			{
-//				System.out.println(a);
-				
-//				Polynomial test = new Polynomial(r, n, a).pow(n);
-//				System.out.println(Arrays.toString(test.coef));
-				
 				return false;
 			}
 		}
@@ -324,8 +300,6 @@ public class AKS
 				f[j + (m >> 1)] = fEven[j].subtract(x.multiply(fOdd[j]));
 				
 				x = x.multiply(w);
-				
-//				System.out.println(x.real + " " + x.imag);
 			}
 			
 			return f;
@@ -401,6 +375,94 @@ public class AKS
 			return temp;
 		}
 		
+		private Polynomial multiply(Polynomial p)
+		{
+			switch(MODE)
+			{
+			case 0:
+				return multiplySlow(p);
+			default:
+				return multiplyFFT(p);
+			}
+		}
+		
+		// We do the mod during the multiplication
+		private Polynomial multiplySlow(Polynomial p)
+		{
+			Polynomial ret = new Polynomial(r, n);
+			for(int i = 0; i < coef.length; i++)
+			{
+				for(int j = 0; j < p.coef.length; j++)
+				{
+					BigInteger c = coef[i].multiply(p.coef[j]).mod(n);
+					
+					ret.coef[(i + j) % (int)r] = ret.coef[(i + j) % (int)r].add(c).mod(n);
+				}
+			}
+			
+			return ret;
+		}
+		
+		// Assumes both polynomials are the same degree
+		@SuppressWarnings("unused")
+		private Polynomial multiplyFFT(Polynomial p)
+		{
+			Polynomial q = expand();
+			p = p.expand();
+			int m = (int) Math.max(q.r, p.r);
+			
+			if(MODE == 1)
+			{
+				BigComplex root = new BigComplex(Math.cos(2 * Math.PI / m), Math.sin(2 * Math.PI / m));
+				
+				BigComplex[] f1 = fft(q.coef, m, root);
+				BigComplex[] f2 = fft(p.coef, m, root);
+				
+				BigComplex[] f3 = new BigComplex[m];
+				for(int i = 0; i < m; i++)
+				{
+					f3[i] = f1[i].multiply(f2[i]);
+				}
+				
+				BigComplex[] c = fft(f3, m, new BigComplex(1, 0).divide(root));
+				
+				Polynomial result = new Polynomial(c.length, n);
+				for(int j = 0; j < c.length; j++)
+				{
+					BigComplex temp = c[j].divide(new BigComplex(m, 0));
+					
+					result.coef[j] = temp.real.add(EPSILON).toBigInteger();
+				}
+				
+				return result.mod((int)r);
+			}
+			else
+			{
+				Complex root = new Complex(Math.cos(2.0 * Math.PI / (double)m), Math.sin(2.0 * Math.PI / (double)m));
+				
+				Complex[] f1 = fft(q.coef, m, root);
+				Complex[] f2 = fft(p.coef, m, root);
+				
+				Complex[] f3 = new Complex[m];
+				for(int i = 0; i < m; i++)
+				{
+					f3[i] = f1[i].multiply(f2[i]);
+				}
+				
+				Complex[] c = fft(f3, m, new Complex(1, 0).divide(root));
+				
+				Polynomial result = new Polynomial(c.length, n);
+				for(int j = 0; j < c.length; j++)
+				{
+					Complex temp = c[j].divide(new Complex(m, 0));
+					
+					result.coef[j] = new BigDecimal(temp.real + 0.5 + 1E-3).toBigInteger();
+				}
+				
+				return result.mod((int)r);
+			}
+		}
+		
 		private Polynomial expand()
 		{
 			int tmp = (int)((r << 1) - 1);
@@ -428,72 +490,6 @@ public class AKS
 			return newPoly;
 		}
 		
-		// Assumes both polynomials are the same degree
-		private Polynomial multiply(Polynomial p)
-		{
-//			System.out.println(Arrays.toString(coef));
-//			System.out.println(Arrays.toString(p.coef));
-			
-			Polynomial q = expand();
-			p = p.expand();
-			int m = (int) Math.max(q.r, p.r);
-			
-////			System.out.println(Math.cos(2.0 * Math.PI / (double)m));
-//			
-//			Complex root = new Complex(Math.cos(2.0 * Math.PI / (double)m), Math.sin(2.0 * Math.PI / (double)m));
-//			
-////			System.out.println(m);
-////			System.out.println(root.real + " " + root.imag);
-//			
-//			Complex[] f1 = fft(q.coef, m, root);
-//			Complex[] f2 = fft(p.coef, m, root);
-//			
-//			Complex[] f3 = new Complex[m];
-//			for(int i = 0; i < m; i++)
-//			{
-//				f3[i] = f1[i].multiply(f2[i]);
-//			}
-//			
-//			Complex[] c = fft(f3, m, new Complex(1, 0).divide(root));
-//			
-//			Polynomial result = new Polynomial(c.length, n);
-//			for(int j = 0; j < c.length; j++)
-//			{
-//				Complex temp = c[j].divide(new Complex(m, 0));
-//				
-//				result.coef[j] = new BigDecimal(temp.real + 0.5 + 1E-3).toBigInteger();
-////				System.out.println(result.coef[j] + " " + c[j].real + " " + c[j].imag);
-//			}
-//			
-////			System.out.println(Arrays.toString(result.coef));
-//			
-//			return result.mod((int)r);
-			
-			BigComplex root = new BigComplex(Math.cos(2 * Math.PI / m), Math.sin(2 * Math.PI / m));
-			
-			BigComplex[] f1 = fft(q.coef, m, root);
-			BigComplex[] f2 = fft(p.coef, m, root);
-			
-			BigComplex[] f3 = new BigComplex[m];
-			for(int i = 0; i < m; i++)
-			{
-				f3[i] = f1[i].multiply(f2[i]);
-			}
-			
-			BigComplex[] c = fft(f3, m, new BigComplex(1, 0).divide(root));
-			
-			Polynomial result = new Polynomial(c.length, n);
-			for(int j = 0; j < c.length; j++)
-			{
-				BigComplex temp = c[j].divide(new BigComplex(m, 0));
-				
-				result.coef[j] = temp.real.add(EPSILON).toBigInteger();
-//				System.out.println(c[j].imag);
-			}
-			
-			return result.mod((int)r);
-		}
-		
 		public Polynomial mod(int m)
 		{
 			Polynomial p = new Polynomial(m, n);
@@ -504,23 +500,6 @@ public class AKS
 			
 			return p;
 		}
-		
-		// We do the mod during the multiplication
-//		private Polynomial multiply(Polynomial p)
-//		{
-//			Polynomial ret = new Polynomial(r, n);
-//			for(int i = 0; i < coef.length; i++)
-//			{
-//				for(int j = 0; j < p.coef.length; j++)
-//				{
-//					BigInteger c = coef[i].multiply(p.coef[j]).mod(n);
-//					
-//					ret.coef[(i + j) % (int)r] = ret.coef[(i + j) % (int)r].add(c).mod(n);
-//				}
-//			}
-//			
-//			return ret;
-//		}
 	}
 	
 	private static class Complex
@@ -532,13 +511,6 @@ public class AKS
 		{
 			real = r;
 			imag = i;
-			
-//			System.out.println("Here");
-			
-//			if(real >= 1E100 || imag >= 1E100)
-//			{
-//				System.out.println("Overflow!");
-//			}
 		}
 		
 		public Complex add(Complex c)
@@ -604,7 +576,7 @@ public class AKS
 		}
 	}
 	
-	public static void main(String[] args)
+	public static void main(String[] args) throws IOException
 	{
 		Scanner in = new Scanner(System.in);
 		
