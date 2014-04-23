@@ -525,6 +525,7 @@ public class AKS
 			return newPoly;
 		}
 		
+		//we know that cx^a mod n = cx^(a mod n)
 		public Polynomial mod(int m)
 		{
 			Polynomial p = new Polynomial(m, n);
