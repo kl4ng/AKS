@@ -120,7 +120,7 @@ public class AKS
 		}
 	}
 	
-	//(3) see if 1 < gcd(a,n) < n for some a<=r
+	//see if 1 < gcd(a,n) < n for some a<=r
 	private static boolean checkGCD(BigInteger n, long r)
 	{
 		for(long a = 2; a <= r; a++)
@@ -189,7 +189,7 @@ public class AKS
 		return tmp;
 	}
 	
-	//totient function that iterates through all the divisors
+	//totient function that iterates through all the divisors of r
 	private static long totient(long r)
 	{
 		long result = r;
@@ -232,6 +232,7 @@ public class AKS
 	{
 		if(m == 1)
 		{
+			//the base case is if the polynomial is degree 1
 			BigComplex[] f = new BigComplex[1];
 			f[0] = a[0];
 			
@@ -261,6 +262,7 @@ public class AKS
 			
 			BigComplex[] f = new BigComplex[m];
 			
+			//build the answer using the two halves and the roots of unity
 			BigComplex x = new BigComplex(BigDecimal.ONE, BigDecimal.ZERO);
 			for(int j = 0; j < m >> 1; j++)
 			{
@@ -292,6 +294,7 @@ public class AKS
 	{
 		if(m == 1)
 		{
+			//the base case is if the polynomial is degree 1
 			Complex[] f = new Complex[1];
 			f[0] = a[0];
 			
@@ -299,11 +302,10 @@ public class AKS
 		}
 		else
 		{
-			//divide the a's into the even and odd arrays
 			Complex[] aEven = new Complex[m >> 1];
 			Complex[] aOdd = new Complex[m >> 1];
 			
-			//compute FFT on each 'half'
+			//divide the a's into the even and odd arrays
 			for(int i = 0; i < a.length; i++)
 			{
 				if((i & 1) == 0)
@@ -316,11 +318,13 @@ public class AKS
 				}
 			}
 
+			//compute FFT on each 'half'
 			Complex[] fEven = fft(aEven, m >> 1, w.multiply(w));
 			Complex[] fOdd = fft(aOdd, m >> 1, w.multiply(w));
 			
 			Complex[] f = new Complex[m];
 			
+			//build the answer using the two halves and the roots of unity
 			Complex x = new Complex(1, 0);
 			for(int j = 0; j < m >> 1; j++)
 			{
@@ -341,6 +345,7 @@ public class AKS
 		long r;
 		BigInteger n;
 		
+		// Constructor for a polynomial mod x^r - 1, n
 		public Polynomial(long R, BigInteger N)
 		{
 			coef = new BigInteger[(int)R];
@@ -353,6 +358,7 @@ public class AKS
 			n = N;
 		}
 		
+		// Constructor for a polynomial of the form x + a (mod x^r - 1, n)
 		public Polynomial(long R, BigInteger N, long a)
 		{
 			coef = new BigInteger[(int)R];
@@ -368,6 +374,7 @@ public class AKS
 			coef[0] = BigInteger.valueOf(a);
 		}
 		
+		// Determine if two polynomials are equal
 		public boolean equals(Polynomial p)
 		{
 			if(coef.length != p.coef.length)
@@ -417,12 +424,12 @@ public class AKS
 			}
 		}
 		
-		// We do the mod during the multiplication,
+		// basic O(n^2) elementary multiplication
 		private Polynomial multiplySlow(Polynomial p)
 		{
 			Polynomial ret = new Polynomial(r, n);
 			
-			//basic O(n^2) elementary multiplication
+			// We do the mod during the multiplication
 			for(int i = 0; i < coef.length; i++)
 			{
 				for(int j = 0; j < p.coef.length; j++)
@@ -436,29 +443,36 @@ public class AKS
 			return ret;
 		}
 		
+		// Multiply two polynomials using FFT
 		// Assumes both polynomials are the same degree
 		@SuppressWarnings("unused")
 		private Polynomial multiplyFFT(Polynomial p)
 		{
+			// Expand polynomials so the number of coefficients is a power of 2
 			Polynomial q = expand();
 			p = p.expand();
 			int m = (int) Math.max(q.r, p.r);
 			
 			if(MODE == 1)
 			{
+				// mth root of unity
 				BigComplex root = new BigComplex(Math.cos(2 * Math.PI / m), Math.sin(2 * Math.PI / m));
 				
+				// Compute fft of both polynomials
 				BigComplex[] f1 = fft(q.coef, m, root);
 				BigComplex[] f2 = fft(p.coef, m, root);
 				
+				// Multiply result of fft for each x-value
 				BigComplex[] f3 = new BigComplex[m];
 				for(int i = 0; i < m; i++)
 				{
 					f3[i] = f1[i].multiply(f2[i]);
 				}
 				
+				// Convert to polynomial using inverse fft
 				BigComplex[] c = fft(f3, m, new BigComplex(1, 0).divide(root));
 				
+				// Extract real coefficients into polynomial form
 				Polynomial result = new Polynomial(c.length, n);
 				for(int j = 0; j < c.length; j++)
 				{
@@ -467,23 +481,29 @@ public class AKS
 					result.coef[j] = temp.real.add(EPSILON).toBigInteger();
 				}
 				
+				// Perform mod
 				return result.mod((int)r);
 			}
 			else
 			{
+				// mth root of unity
 				Complex root = new Complex(Math.cos(2.0 * Math.PI / (double)m), Math.sin(2.0 * Math.PI / (double)m));
 				
+				// Compute fft of both polynomials
 				Complex[] f1 = fft(q.coef, m, root);
 				Complex[] f2 = fft(p.coef, m, root);
 				
+				// Multiply result of fft for each x-value
 				Complex[] f3 = new Complex[m];
 				for(int i = 0; i < m; i++)
 				{
 					f3[i] = f1[i].multiply(f2[i]);
 				}
 				
+				// Convert to polynomial using inverse fft
 				Complex[] c = fft(f3, m, new Complex(1, 0).divide(root));
 				
+				// Extract real coefficients into polynomial form
 				Polynomial result = new Polynomial(c.length, n);
 				for(int j = 0; j < c.length; j++)
 				{
@@ -492,6 +512,7 @@ public class AKS
 					result.coef[j] = new BigDecimal(temp.real + 0.5 + 1E-3).toBigInteger();
 				}
 				
+				// Perform mod
 				return result.mod((int)r);
 			}
 		}
@@ -512,7 +533,7 @@ public class AKS
 				pow2--;
 			}
 			
-			//fill expanded coefficients with 0 so we dont actually change the polynomial iteslf
+			//fill expanded coefficients with 0 so we dont actually change the polynomial itself
 			Polynomial newPoly = new Polynomial(1 << pow2, n);
 			for(int i = 0; i < newPoly.coef.length; i++)
 			{
@@ -525,9 +546,10 @@ public class AKS
 			return newPoly;
 		}
 		
-		//we know that cx^a mod n = cx^(a mod n)
+		//Compute mod x^r - 1
 		public Polynomial mod(int m)
 		{
+			//we know that cx^a mod n = cx^(a mod n)
 			Polynomial p = new Polynomial(m, n);
 			for(int i = 0; i < coef.length; i++)
 			{
@@ -543,27 +565,32 @@ public class AKS
 		double real;
 		double imag;
 		
+		// Contructor for Complex numbers
 		public Complex(double r, double i)
 		{
 			real = r;
 			imag = i;
 		}
 		
+		// Add two complex numbers
 		public Complex add(Complex c)
 		{
 			return new Complex(real + c.real, imag + c.imag);
 		}
 		
+		// Subtract two complex numbers
 		public Complex subtract(Complex c)
 		{
 			return new Complex(real - c.real, imag - c.imag);
 		}
 		
+		// Multiply two complex numbers
 		public Complex multiply(Complex c)
 		{
 			return new Complex(real * c.real - imag * c.imag, real * c.imag + imag * c.real);
 		}
 		
+		// Divide two complex numbers
 		public Complex divide(Complex c)
 		{
 			double denom = c.real * c.real + c.imag * c.imag;
@@ -576,34 +603,40 @@ public class AKS
 		BigDecimal real;
 		BigDecimal imag;
 		
+		// Constructor for complex number using doubles
 		public BigComplex(double r, double i)
 		{
 			real = new BigDecimal(r, PRECISION);
 			imag = new BigDecimal(i, PRECISION);
 		}
 		
+		// Constructor for complex number using BigDecimals
 		public BigComplex(BigDecimal r, BigDecimal i)
 		{
 			real = r;
 			imag = i;
 		}
 		
+		// Add two complex numbers
 		public BigComplex add(BigComplex c)
 		{
 			return new BigComplex(real.add(c.real), imag.add(c.imag));
 		}
 		
+		// Subtract two complex numbers
 		public BigComplex subtract(BigComplex c)
 		{
 			return new BigComplex(real.subtract(c.real), imag.subtract(c.imag));
 		}
 		
+		// Multiply two complex numbers
 		public BigComplex multiply(BigComplex c)
 		{
 			return new BigComplex(real.multiply(c.real).subtract(imag.multiply(c.imag)),
 					              real.multiply(c.imag).add(imag.multiply(c.real)));
 		}
 		
+		// Divide two complex numbers
 		public BigComplex divide(BigComplex c)
 		{
 			BigDecimal denom = c.real.multiply(c.real).add(c.imag.multiply(c.imag));
@@ -612,16 +645,34 @@ public class AKS
 		}
 	}
 	
+	// Main method for testing
 	public static void main(String[] args) throws IOException
 	{
 		Scanner in = new Scanner(System.in);
 		
 		while(true)
 		{
-			String num = in.next();
-			System.out.println(num);
+			System.out.print("Enter a number >= 2 that you would like to test for primality (or 0 to exit): ");
 			
-			System.out.println(isPrime(new BigInteger(num)));
+			String num = in.next();
+			
+			if(num.equals("0"))
+			{
+				break;
+			}
+			
+			boolean result = isPrime(new BigInteger(num));
+			
+			System.out.print(num + " is ");
+			if(result)
+			{
+				System.out.println("prime.");
+			}
+			else
+			{
+				System.out.println("not prime.");
+			}
+			System.out.println();
 		}
 	}
 }
