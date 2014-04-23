@@ -19,11 +19,13 @@ public class AKS
 	public static final MathContext PRECISION = MathContext.DECIMAL64;
 	public static final BigDecimal EPSILON = new BigDecimal(1E-3, PRECISION);
 	
+	//wrapper function for testing integers
 	public static boolean isPrime(int n)
 	{
 		return isPrime(BigInteger.valueOf(n));
 	}
 	
+	//wrapper function for testing longs
 	public static boolean isPrime(long n)
 	{
 		return isPrime(BigInteger.valueOf(n));
@@ -118,6 +120,7 @@ public class AKS
 		}
 	}
 	
+	//(3) see if 1 < gcd(a,n) < n for some a<=r
 	private static boolean checkGCD(BigInteger n, long r)
 	{
 		for(long a = 2; a <= r; a++)
@@ -130,8 +133,12 @@ public class AKS
 		return true;
 	}
 	
+	//the main part of AKS. check is (x+a)^n == x + a^n (mod n)
+	//if the above condition does not hold, we know that n is composite!
 	private static boolean checkCondition(BigInteger n, long r)
 	{
+		//upper bound of for loop that we need to check to in order to know that there is
+		//no chance of a false positive prime
 		long maxA = (long)Math.floor(Math.sqrt(totient(r)) * log(n, 2));
 		for(long a = 1; a <= maxA; a++)
 		{
@@ -157,6 +164,7 @@ public class AKS
 		return gcd(b, a.mod(b));
 	}
 	
+	//quick and dirty logarithm function for BigInteger
 	private static double log(BigInteger a, int b)
 	{
 		String s = a.toString();
@@ -165,6 +173,7 @@ public class AKS
 		return (Math.log10(d) + (s.length()-1)) / Math.log10(b);
 	}
 	
+	//repeated squaring recursive pow function
 	private static BigInteger pow(BigInteger a, BigInteger b)
 	{
 		if(b.compareTo(BigInteger.ONE) == 0)
@@ -180,6 +189,7 @@ public class AKS
 		return tmp;
 	}
 	
+	//totient function that iterates through all the divisors
 	private static long totient(long r)
 	{
 		long result = r;
@@ -206,6 +216,7 @@ public class AKS
 		return result;
 	}
 	
+	//wrapper function for fft for BigIntegers where we convert BigInteger to BigComplex first
 	public static BigComplex[] fft(BigInteger[] a, int m, BigComplex w)
 	{
 		BigComplex[] newCoef = new BigComplex[a.length];
@@ -231,6 +242,7 @@ public class AKS
 			BigComplex[] aEven = new BigComplex[m >> 1];
 			BigComplex[] aOdd = new BigComplex[m >> 1];
 			
+			//divide the a's into the even and odd arrays	
 			for(int i = 0; i < a.length; i++)
 			{
 				if((i & 1) == 0)
@@ -243,6 +255,7 @@ public class AKS
 				}
 			}
 			
+			//compute FFT on each 'half'
 			BigComplex[] fEven = fft(aEven, m >> 1, w.multiply(w));
 			BigComplex[] fOdd = fft(aOdd, m >> 1, w.multiply(w));
 			
@@ -262,6 +275,7 @@ public class AKS
 		}
 	}
 	
+	//wrapper function, BigInteger->Complex before doing FFT
 	public static Complex[] fft(BigInteger[] a, int m, Complex w)
 	{
 		Complex[] newCoef = new Complex[a.length];
@@ -273,6 +287,7 @@ public class AKS
 		return fft(newCoef, m, w);
 	}
 	
+	//same code, but uses Complex (which uses doubles to store the values)
 	public static Complex[] fft(Complex[] a, int m, Complex w)
 	{
 		if(m == 1)
@@ -284,9 +299,11 @@ public class AKS
 		}
 		else
 		{
+			//divide the a's into the even and odd arrays
 			Complex[] aEven = new Complex[m >> 1];
 			Complex[] aOdd = new Complex[m >> 1];
 			
+			//compute FFT on each 'half'
 			for(int i = 0; i < a.length; i++)
 			{
 				if((i & 1) == 0)
@@ -298,7 +315,7 @@ public class AKS
 					aOdd[i >> 1] = a[i];
 				}
 			}
-			
+
 			Complex[] fEven = fft(aEven, m >> 1, w.multiply(w));
 			Complex[] fOdd = fft(aOdd, m >> 1, w.multiply(w));
 			
@@ -369,6 +386,7 @@ public class AKS
 			return true;
 		}
 		
+		//fast exponentiation of polynomials
 		public Polynomial pow(BigInteger e)
 		{
 			if(e.compareTo(BigInteger.ONE) == 0)
@@ -387,6 +405,7 @@ public class AKS
 			return temp;
 		}
 		
+		//multiply wrapper that uses a different multiply function based on the MODE
 		private Polynomial multiply(Polynomial p)
 		{
 			switch(MODE)
@@ -398,10 +417,12 @@ public class AKS
 			}
 		}
 		
-		// We do the mod during the multiplication
+		// We do the mod during the multiplication,
 		private Polynomial multiplySlow(Polynomial p)
 		{
 			Polynomial ret = new Polynomial(r, n);
+			
+			//basic O(n^2) elementary multiplication
 			for(int i = 0; i < coef.length; i++)
 			{
 				for(int j = 0; j < p.coef.length; j++)
@@ -475,6 +496,7 @@ public class AKS
 			}
 		}
 		
+		//we need to expand the polynomials to some power of 2
 		private Polynomial expand()
 		{
 			int tmp = (int)((r << 1) - 1);
@@ -490,6 +512,7 @@ public class AKS
 				pow2--;
 			}
 			
+			//fill expanded coefficients with 0 so we dont actually change the polynomial iteslf
 			Polynomial newPoly = new Polynomial(1 << pow2, n);
 			for(int i = 0; i < newPoly.coef.length; i++)
 			{
