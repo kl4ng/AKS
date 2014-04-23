@@ -31,7 +31,7 @@ public class AKS
 	
 	public static boolean isPrime(BigInteger n)
 	{
-		// (1)see if n = a^b 
+		//(1) see if n = a^b 
 		if(isPowerOfInteger(n))
 			return false;
 		
@@ -54,17 +54,22 @@ public class AKS
 		return true;
 	}
 	
+	// Determine if n is a power of an integer
 	private static boolean isPowerOfInteger(BigInteger n)
 	{
+		// Iterate through possible exponents
 		BigInteger maxB = BigInteger.valueOf(n.bitLength());
 		for(BigInteger b = BigInteger.valueOf(2); b.compareTo(maxB) < 0; b = b.add(BigInteger.ONE))
 		{
 			BigInteger lo = BigInteger.valueOf(2);
 			BigInteger hi = n.add(BigInteger.ZERO);
 			
+			// Binary search for value of a (the base)
 			while(lo.compareTo(hi) < 0)
 			{
 				BigInteger a = hi.add(lo).divide(BigInteger.valueOf(2));
+				
+				// Calculate a^b
 				BigInteger tmp = pow(a,b);
 				
 				if(tmp.compareTo(n) == 0)
@@ -80,18 +85,24 @@ public class AKS
 		return false;
 	}
 	
+	// Find the smallest r such that or(n) > (log n)^2
 	private static long multOrder(BigInteger n)
 	{
+		// Calculate the maximum power of n that shouldn't be 1 (mod r)
 		long maxK = (long)Math.floor(log(n, 2) * log(n, 2));
 		
+		// Iterate through values of r
 		for(long r = 2; ; r++)
 		{
 			BigInteger a = BigInteger.ONE;
 			boolean valid = true;
+			
+			// Compute powers of n (mod r)
 			for(long k = 1; k <= maxK; k++)
 			{
 				a = a.multiply(n).mod(BigInteger.valueOf(r));
 				
+				// Check if the value if 1
 				if(a.compareTo(BigInteger.ONE) <= 0)
 				{
 					valid = false;
@@ -99,6 +110,7 @@ public class AKS
 				}
 			}
 			
+			// Check if we found a valid value for r
 			if(valid)
 			{
 				return r;
